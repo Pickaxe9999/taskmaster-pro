@@ -14,6 +14,8 @@ var createTask = function(taskText, taskDate, taskList) {
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
 
+  //check due date
+  //auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -156,7 +158,7 @@ $("#task-form-modal").on("shown.bs.modal", function() {
 });
 
 // save button in modal was clicked
-$("#task-form-modal .btn-primary").click(function() {
+$("#task-form-modal .btn-save").click(function() {
   // get form values
   var taskText = $("#modalTaskDescription").val();
   var taskDate = $("#modalDueDate").val();
@@ -193,16 +195,16 @@ $(".card .list-group").sortable({
   tolerance: "pointer",
   helper: "clone",
   activate: function(event){
-    console.log("activate", this);
+    //console.log("activate", this);
   },
   deactivate: function(event){
-    console.log("deactivate", this);
+    //console.log("deactivate", this);
   },
   over: function(event){
-    console.log("over", this);
+    //console.log("over", this);
   },
   out: function(event){
-    console.log("out", this);
+    //console.log("out", this);
   },
   update: function(event){
     //declare an array to store the task data within
@@ -235,6 +237,22 @@ $(".card .list-group").sortable({
     //update array on tasks object and save
     tasks[arrName] = tempArr;
     saveTasks();
+  }
+});
+
+//check if an item is over the trashcan
+$("#trash").droppable({
+  accept: ".card .list-group-item",
+  tolerance: "touch",
+  drop: function(event, ui) {
+    console.log("drop");
+    ui.draggable.remove();
+  },
+  over: function(event, ui) {
+    console.log("over");
+  },
+  out: function(event, ui) {
+    console.log("out");
   }
 });
 
