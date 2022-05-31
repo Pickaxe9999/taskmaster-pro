@@ -15,7 +15,7 @@ var createTask = function(taskText, taskDate, taskList) {
   taskLi.append(taskSpan, taskP);
 
   //check due date
-  //auditTask(taskLi);
+  auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -49,18 +49,36 @@ var saveTasks = function() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 };
 
+var auditTask = function(taskEl){
+  // get date from task element
+  var date = $(taskEl).find("span").text().trim();
+
+  // convert to moment object at 5:00pm
+  var time = moment(date, "L").set("hour", 17);
+
+  // remove any old classes from element
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  // apply new class if task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger");
+  }else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+}
+
 //when a tasks description is clicked then the p element is replaced with a textArea tag to edit the contents
-$(".list-group").on("click", "p", function(){
+$(".list-group").on("click", "p", function() {
+  // get current text of p element
   var text = $(this)
     .text()
     .trim();
 
-  var textInput = $("<textarea>")
-    .addClass("form-control")
-    .val(text);
-
+  // replace p element with a new textarea
+  var textInput = $("<textarea>").addClass("form-control").val(text);
   $(this).replaceWith(textInput);
 
+  // auto focus new element
   textInput.trigger("focus");
 });
 
@@ -95,54 +113,55 @@ $(".list-group").on("blur", "textarea", function() {
 });
 
 //begin editing the due date
-$(".list-group").on("click", "span", function(){
-  //get current text
+$(".list-group").on("click", "span", function() {
+  // get current text
   var date = $(this)
     .text()
     .trim();
 
-  //create new input element
+  // create new input element
   var dateInput = $("<input>")
     .attr("type", "text")
     .addClass("form-control")
     .val(date);
-
-  //swap out elements
   $(this).replaceWith(dateInput);
 
-  //automatically focus on new element
+  // enable jquery ui date picker
+  dateInput.datepicker({
+    minDate: 1,
+    onClose: function() {
+      // when calendar is closed, force a "change" event
+      $(this).trigger("change");
+    }
+  });
+
+  // automatically bring up the calendar
   dateInput.trigger("focus");
 });
 
 //save the due date edit once the element is clicked off
-$(".list-group").on("blur", "input[type='text']", function(){
-//get current text
-var date = $(this)
-  .val()
-  .trim();
+$(".list-group").on("change", "input[type='text']", function() {
+  var date = $(this).val();
 
-//get the parent ul's id attribute
-var status = $(this)
-  .closest(".list-group")
-  .attr("id")
-  .replace("list-", "");
+  // get status type and position in the list
+  var status = $(this)
+    .closest(".list-group")
+    .attr("id")
+    .replace("list-", "");
+  var index = $(this)
+    .closest(".list-group-item")
+    .index();
 
-//get the task's current postition in the list of other li elements
-var index = $(this)
-  .closest(".list-group-item")
-  .index();
-  
-//update task in array and re-save to localStorage
-tasks[status][index].date = date;
-saveTasks();
+  // update task in array and re-save to localstorage
+  tasks[status][index].date = date;
+  saveTasks();
 
-//recreate span element with bootstrap classes
-var taskSpan = $("<span>")
-  .addClass("badge badge-primary badge-pill")
-  .text(date);
-
-//replace input with span element
-$(this).replaceWith(taskSpan);
+  // recreate span and insert in place of input element
+  var taskSpan = $("<span>")
+    .addClass("badge badge-primary badge-pill")
+    .text(date);
+    $(this).replaceWith(taskSpan);
+    auditTask($(taskSpan).closest(".list-group-item"));
 });
 
 // modal was triggered
@@ -254,6 +273,11 @@ $("#trash").droppable({
   out: function(event, ui) {
     console.log("out");
   }
+});
+
+//creates an interactable calander for the user to pick a date
+$("#modalDueDate").datepicker({
+  minDate: 1
 });
 
 // load tasks for the first time
